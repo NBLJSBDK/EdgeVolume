@@ -1,0 +1,18 @@
+# CMake build output
+/build/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+Makefile
+compile_commands.json
+
+# Qt and IDE local files
+*.user
+*.autosave
+.vscode/
+.idea/
+
+# Local logs and generated binaries
+*.log
+edge-volume

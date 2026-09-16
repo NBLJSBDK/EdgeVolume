@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=EdgeVolume
+Exec=@EDGE_VOLUME_EXEC@
+Terminal=false
+StartupNotify=false
+OnlyShowIn=KDE;

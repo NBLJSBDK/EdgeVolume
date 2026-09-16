@@ -1,0 +1,3 @@
+# Give only the active edge-volume user access to physical mouse event nodes.
+# This intentionally does not grant access to keyboard event nodes.
+ACTION=="add|change", SUBSYSTEM=="input", KERNEL=="event*", ENV{ID_INPUT_MOUSE}=="1", OWNER="@EDGE_VOLUME_USER@", MODE="0600"

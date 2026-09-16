@@ -1,0 +1,15 @@
+{
+    "KPlugin": {
+        "Name": "Edge Volume Cursor Bridge",
+        "Name[zh_CN]": "EdgeVolume 光标桥接",
+        "Description": "Publishes the KWin cursor position to edge-volume",
+        "Description[zh_CN]": "把 KWin 光标位置发送给 EdgeVolume",
+        "Icon": "audio-volume-high",
+        "Id": "edge-volume-cursor",
+        "Version": "1.0",
+        "License": "GPL-3.0-or-later"
+    },
+    "X-Plasma-API": "javascript",
+    "X-Plasma-MainScript": "code/main.js",
+    "KPackageStructure": "KWin/Script"
+}
