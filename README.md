@@ -6,9 +6,10 @@ EdgeVolume 不创建透明窗口，也不占用屏幕边缘的输入区域，因
 
 ## 工作方式
 
-- `edge-volume` 被动读取带滚轮能力的 Linux evdev 输入设备；
+- `edge-volume` 独占带滚轮能力的 Linux evdev 输入设备，并创建一个同等能力的虚拟鼠标；
 - KWin Script 通过 KDE 的 `workspace.cursorPos` 同步当前光标位置；
-- 只有光标位于虚拟屏幕最左侧 1px 时，滚轮才调用 KDE 的音量快捷键；
+- 光标位于虚拟屏幕最左侧 1px 时，滚轮事件被消费、不再传给下层，并调用 KDE 的音量快捷键；
+- 物理鼠标的点击、移动、拖拽以及非边缘滚轮事件，都会通过虚拟鼠标转发；
 - 音量 OSD、反馈音、步进和最大音量设置继续由 KDE 管理。
 
 支持 KDE Plasma 的 X11 和 Wayland 会话。
@@ -46,7 +47,7 @@ tail -n 50 "$HOME/.local/state/edge-volume.log"
 
 ```text
 KWin 光标桥接已连接
-监听滚轮设备：/dev/input/event...
+拦截滚轮设备：/dev/input/event...，点击/移动转发到虚拟鼠标
 ```
 
 把鼠标移到屏幕最左侧，滚动滚轮测试音量；再测试最左侧像素的点击是否正常。

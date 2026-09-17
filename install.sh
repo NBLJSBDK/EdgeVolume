@@ -24,6 +24,13 @@ KWIN_DIR="$HOME/.local/share/kwin/scripts/edge-volume-cursor"
 AUTOSTART_DIR="$HOME/.config/autostart"
 UDEV_RULE_PATH="/etc/udev/rules.d/99-edge-volume-mouse.rules"
 
+# 项目改名或移动后，旧的 CMake 缓存会指向不存在的源目录；自动重建缓存。
+if [[ -f "$BUILD_DIR/CMakeCache.txt" ]] && \
+   ! grep -Fq "CMAKE_HOME_DIRECTORY:INTERNAL=$ROOT_DIR" "$BUILD_DIR/CMakeCache.txt"; then
+    echo "检测到旧的构建缓存，正在重新配置：$BUILD_DIR"
+    rm -rf -- "$BUILD_DIR"
+fi
+
 if ! command -v cmake >/dev/null 2>&1; then
     echo "缺少 cmake" >&2
     exit 1
@@ -55,6 +62,11 @@ if command -v sudo >/dev/null 2>&1 && command -v udevadm >/dev/null 2>&1; then
         "$RULE_TMP" "$UDEV_RULE_PATH"
     sudo udevadm control --reload-rules
     sudo udevadm trigger --subsystem-match=input --action=change
+    if command -v modprobe >/dev/null 2>&1; then
+        sudo modprobe uinput || true
+    fi
+    sudo udevadm trigger --subsystem-match=misc --sysname-match=uinput \
+        --action=change 2>/dev/null || true
 
     echo "已配置：$UDEV_RULE_PATH"
     echo "用户：$EDGE_VOLUME_USER"
@@ -92,4 +104,4 @@ echo "KWin 脚本：$KWIN_DIR"
 echo "日志：$HOME/.local/state/edge-volume.log"
 echo
 echo "注意：不要用 sudo 启动 edge-volume；它必须连接当前用户的 KDE D-Bus。"
-echo "如果日志显示无法打开 /dev/input/event*，再单独处理输入设备权限。"
+echo "如果日志显示无法打开 /dev/input/event* 或 /dev/uinput，请重新运行 sudo ./install.sh。"
