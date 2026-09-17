@@ -1,0 +1,4 @@
+/build/
+/build-*/
+*.user
+compile_commands.json
