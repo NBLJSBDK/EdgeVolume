@@ -12,6 +12,7 @@
 #include <QDBusConnection>
 #include <QDBusMessage>
 #include <QDBusPendingCall>
+#include <QDebug>
 
 #include <cmath>
 #include <memory>
@@ -27,6 +28,7 @@ public:
         , KWin::InputEventFilter(KWin::InputFilterOrder::ScreenEdge)
     {
         KWin::input()->installInputEventFilter(this);
+        qInfo() << "KDEVolume: input filter installed";
     }
 
     ~KDEVolumeFilter() override
@@ -38,18 +40,28 @@ public:
 
     bool pointerAxis(KWin::PointerAxisEvent *event) override
     {
+        qInfo() << "KDEVolume: axis"
+                << "position=" << event->position
+                << "delta=" << event->delta
+                << "deltaV120=" << event->deltaV120
+                << "orientation=" << static_cast<int>(event->orientation)
+                << "source=" << static_cast<int>(event->source);
+
         if (event->orientation != Qt::Vertical ||
             event->source == KWin::PointerAxisSource::Finger ||
             event->source == KWin::PointerAxisSource::Continuous) {
+            qInfo() << "KDEVolume: axis passed through (not a mouse wheel)";
             m_scrollV120 = 0;
             return false;
         }
 
         if (!isAtLeftEdge(event->position)) {
+            qInfo() << "KDEVolume: axis passed through (not at left edge)";
             m_scrollV120 = 0;
             return false;
         }
 
+        qInfo() << "KDEVolume: left-edge wheel detected";
         if (event->deltaV120 != 0) {
             m_scrollV120 += event->deltaV120;
             while (m_scrollV120 <= -120) {
@@ -82,6 +94,10 @@ private:
 
     void changeVolume(int direction)
     {
+        qInfo() << "KDEVolume: invoking"
+                << (direction > 0 ? "increase_volume" : "decrease_volume")
+                << "through KDE global shortcut";
+
         QDBusMessage message = QDBusMessage::createMethodCall(
             QStringLiteral("org.kde.kglobalaccel"),
             QStringLiteral("/component/kmix"),
