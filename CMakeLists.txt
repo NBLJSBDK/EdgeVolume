@@ -17,6 +17,7 @@ include(KDECompilerSettings NO_POLICY_SCOPE)
 find_package(Qt6 6.7 REQUIRED COMPONENTS Core DBus Widgets)
 find_package(KF6CoreAddons 6.10 REQUIRED)
 find_package(KWin 6.3.6 CONFIG REQUIRED)
+find_package(XCB REQUIRED COMPONENTS XCB)
 
 kcoreaddons_add_plugin(kdevolume
     INSTALL_NAMESPACE "kwin/plugins"
@@ -28,6 +29,7 @@ target_sources(kdevolume PRIVATE
 
 target_link_libraries(kdevolume PRIVATE
     KWin::kwin
+    XCB::XCB
     Qt6::Core
     Qt6::DBus
     Qt6::Widgets

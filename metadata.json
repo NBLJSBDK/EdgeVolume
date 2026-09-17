@@ -2,7 +2,7 @@
     "KPlugin": {
         "Id": "kdevolume",
         "Name": "KDEVolume",
-        "Description": "Adjust KDE volume with the mouse wheel at the left screen edge on Wayland",
+        "Description": "Adjust KDE volume with the mouse wheel at the left screen edge",
         "Version": "0.1.0",
         "License": "GPL-3.0-or-later",
         "EnabledByDefault": false
