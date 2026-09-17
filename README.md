@@ -21,12 +21,19 @@ cmake --build build --parallel
 ## 安装测试
 
 ```bash
-cmake --install build --prefix "$HOME/.local"
-kwriteconfig6 --file kwinrc --group Plugins --key kdevolumeEnabled true
+sudo cmake --install build
+kwriteconfig6 --file "$HOME/.config/kwinrc" --group Plugins --key kdevolumeEnabled --type bool true
 qdbus6 org.kde.KWin /KWin reconfigure
 ```
 
-注销并重新登录后，检查 KWin 日志和左边缘滚轮行为。
+如果旧版 EdgeVolume 已安装，先停止它并移出 KDE 自启动目录，避免两个实现同时处理滚轮：
+
+```bash
+pkill -x edge-volume 2>/dev/null || true
+mv "$HOME/.config/autostart/edge-volume.desktop" "$HOME/.config/edge-volume.desktop.disabled" 2>/dev/null || true
+```
+
+注销并重新登录后，检查左边缘滚轮行为。KDEVolume 作为 KWin 插件运行，不会出现单独的 kdevolume 进程。
 
 ## 设计
 
