@@ -6,13 +6,17 @@
 
 #include <kwin/input.h>
 #include <kwin/input_event.h>
+#include <kwin/main.h>
 #include <kwin/plugin.h>
 #include <kwin/workspace.h>
+#include <kwin/x11eventfilter.h>
 
 #include <QDBusConnection>
 #include <QDBusMessage>
 #include <QDBusPendingCall>
 #include <QDebug>
+#include <QCoreApplication>
+#include <xcb/xproto.h>
 
 #include <cmath>
 #include <memory>
@@ -20,23 +24,74 @@
 namespace
 {
 
-class KDEVolumeFilter final : public KWin::Plugin, public KWin::InputEventFilter
+class KDEVolumeFilter final : public KWin::Plugin
+    , public KWin::InputEventFilter
+#if KWIN_BUILD_X11
+    , public KWin::X11EventFilter
+#endif
 {
 public:
     KDEVolumeFilter()
         : KWin::Plugin()
         , KWin::InputEventFilter(KWin::InputFilterOrder::ScreenEdge)
+#if KWIN_BUILD_X11
+        , KWin::X11EventFilter(QList<int>{XCB_BUTTON_PRESS, XCB_BUTTON_RELEASE})
+#endif
     {
         KWin::input()->installInputEventFilter(this);
         qInfo() << "KDEVolume: input filter installed";
+#if KWIN_BUILD_X11
+        if (KWin::kwinApp()->operationMode() == KWin::Application::OperationModeX11) {
+            KWin::kwinApp()->registerEventFilter(this);
+            m_x11Registered = true;
+            qInfo() << "KDEVolume: X11 event filter installed";
+        }
+#endif
     }
 
     ~KDEVolumeFilter() override
     {
+#if KWIN_BUILD_X11
+        if (m_x11Registered) {
+            KWin::kwinApp()->unregisterEventFilter(this);
+        }
+#endif
         if (KWin::input()) {
             KWin::input()->uninstallInputEventFilter(this);
         }
     }
+
+#if KWIN_BUILD_X11
+    bool event(xcb_generic_event_t *event) override
+    {
+        const uint8_t eventType = event->response_type & ~0x80;
+        if (eventType != XCB_BUTTON_PRESS && eventType != XCB_BUTTON_RELEASE) {
+            return false;
+        }
+
+        const auto *buttonEvent = reinterpret_cast<xcb_button_press_event_t *>(event);
+        if (buttonEvent->detail != 4 && buttonEvent->detail != 5) {
+            return false;
+        }
+
+        const QPointF position(buttonEvent->root_x, buttonEvent->root_y);
+        qInfo() << "KDEVolume: X11 raw wheel"
+                << "position=" << position
+                << "button=" << buttonEvent->detail
+                << "type=" << eventType;
+
+        if (!isAtLeftEdge(position)) {
+            qInfo() << "KDEVolume: X11 raw wheel passed through (not at left edge)";
+            return false;
+        }
+
+        if (eventType == XCB_BUTTON_PRESS) {
+            changeVolume(buttonEvent->detail == 4 ? +1 : -1);
+        }
+
+        return true;
+    }
+#endif
 
     bool pointerButton(KWin::PointerButtonEvent *event) override
     {
@@ -136,6 +191,9 @@ private:
     }
 
     qint32 m_scrollV120 = 0;
+#if KWIN_BUILD_X11
+    bool m_x11Registered = false;
+#endif
 };
 
 class KDEVolumeFactory final : public KWin::PluginFactory
