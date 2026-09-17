@@ -11,6 +11,7 @@
 
 #include <QDBusConnection>
 #include <QDBusMessage>
+#include <QDBusPendingCall>
 
 #include <cmath>
 #include <memory>
