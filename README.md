@@ -37,8 +37,9 @@ mv "$HOME/.config/autostart/edge-volume.desktop" "$HOME/.config/edge-volume.desk
 
 ## 设计
 
-- KWin 的 `InputEventFilter::pointerAxis()` 接收滚轮事件；返回 `true` 消费事件，返回 `false` 放行。
+- Wayland 使用 KWin 的 `InputEventFilter::pointerAxis()` 接收滚轮事件；返回 `true` 消费事件，返回 `false` 放行。
+- X11 使用 KWin 的原生 `X11EventFilter` 接收普通 `ButtonPress/Release` 事件；滚轮的按钮 4/5 在左边缘消费，其余位置放行。
 - 只处理垂直轴，并排除触摸板 `Finger` / `Continuous` 滚动。
 - 音量 OSD、提示音、步进和上限继续由 KDE 管理。
-- Wayland 通过 KWin 的 InputEventFilter 接收轴事件；X11 通过 KWin 的 XInput2 generic 事件过滤器接收滚轮按钮 4/5。
+- Wayland 通过 KWin 的 InputEventFilter 接收轴事件；X11 通过 KWin 的 core 事件过滤器接收滚轮按钮 4/5。
 - 插件接口属于 KWin 二进制扩展，需针对 KWin 版本重新编译。

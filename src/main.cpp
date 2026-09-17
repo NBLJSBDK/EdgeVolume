@@ -17,49 +17,11 @@
 #include <QDebug>
 #include <QList>
 
-#include <cstdint>
 #include <memory>
-#include <xcb/xcb.h>
-#include <xcb/xcbext.h>
+#include <xcb/xproto.h>
 
 namespace
 {
-
-#if KWIN_BUILD_X11
-struct XInputButtonEvent
-{
-    uint8_t responseType;
-    uint8_t extension;
-    uint16_t sequence;
-    uint32_t length;
-    uint16_t eventType;
-    uint16_t deviceId;
-    uint32_t time;
-    uint32_t detail;
-    uint32_t root;
-    uint32_t event;
-    uint32_t child;
-    uint32_t fullSequence;
-    int32_t rootX;
-    int32_t rootY;
-    int32_t eventX;
-    int32_t eventY;
-};
-
-constexpr uint16_t XInputButtonPress = 4;
-constexpr uint16_t XInputButtonRelease = 5;
-
-int xInputOpcode()
-{
-    if (KWin::kwinApp()->operationMode() != KWin::Application::OperationModeX11) {
-        return 0;
-    }
-
-    static xcb_extension_t extension = {"XInputExtension", 0};
-    const auto *reply = xcb_get_extension_data(KWin::kwinApp()->x11Connection(), &extension);
-    return reply && reply->present ? reply->major_opcode : 0;
-}
-#endif
 
 class KDEVolumeFilter final : public KWin::Plugin, public KWin::InputEventFilter
 #if KWIN_BUILD_X11
@@ -71,7 +33,7 @@ public:
         : KWin::Plugin()
         , KWin::InputEventFilter(KWin::InputFilterOrder::ScreenEdge)
 #if KWIN_BUILD_X11
-        , KWin::X11EventFilter(XCB_GE_GENERIC, xInputOpcode(), QList<int>{XInputButtonPress, XInputButtonRelease})
+        , KWin::X11EventFilter(QList<int>{XCB_BUTTON_PRESS, XCB_BUTTON_RELEASE})
 #endif
     {
         KWin::input()->installInputEventFilter(this);
@@ -98,29 +60,28 @@ public:
 #if KWIN_BUILD_X11
     bool event(xcb_generic_event_t *event) override
     {
-        const auto *genericEvent = reinterpret_cast<const xcb_ge_generic_event_t *>(event);
-        const auto *buttonEvent = reinterpret_cast<const XInputButtonEvent *>(event);
-        if (genericEvent->event_type != XInputButtonPress &&
-            genericEvent->event_type != XInputButtonRelease) {
+        const uint8_t eventType = event->response_type & ~0x80;
+        if (eventType != XCB_BUTTON_PRESS && eventType != XCB_BUTTON_RELEASE) {
             return false;
         }
+
+        const auto *buttonEvent = reinterpret_cast<const xcb_button_press_event_t *>(event);
         if (buttonEvent->detail != 4 && buttonEvent->detail != 5) {
             return false;
         }
 
-        const QPointF position(
-            static_cast<qreal>(buttonEvent->rootX) / 65536.0,
-            static_cast<qreal>(buttonEvent->rootY) / 65536.0);
-        qInfo() << "KDEVolume: XInput2 button"
+        const QPointF position(buttonEvent->root_x, buttonEvent->root_y);
+        qInfo() << "KDEVolume: X11 core wheel"
                 << "position=" << position
                 << "button=" << buttonEvent->detail
-                << "eventType=" << genericEvent->event_type;
+                << "eventType=" << eventType
+                << "left=" << (KWin::workspace() ? KWin::workspace()->geometry().left() : 0);
         if (!isAtLeftEdge(position)) {
-            qInfo() << "KDEVolume: XInput2 wheel passed through (not at left edge)";
+            qInfo() << "KDEVolume: X11 core wheel passed through (not at left edge)";
             return false;
         }
 
-        if (genericEvent->event_type == XInputButtonPress) {
+        if (eventType == XCB_BUTTON_PRESS) {
             changeVolume(buttonEvent->detail == 4 ? +1 : -1);
         }
         return true;
