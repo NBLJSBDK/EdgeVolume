@@ -38,6 +38,32 @@ public:
         }
     }
 
+    bool pointerButton(KWin::PointerButtonEvent *event) override
+    {
+        // X11 reports a vertical wheel as buttons 4 (up) and 5 (down).
+        if (event->nativeButton != 4 && event->nativeButton != 5) {
+            return false;
+        }
+
+        qInfo() << "KDEVolume: X11 wheel button"
+                << "position=" << event->position
+                << "nativeButton=" << event->nativeButton
+                << "state=" << static_cast<int>(event->state);
+
+        if (!isAtLeftEdge(event->position)) {
+            qInfo() << "KDEVolume: X11 wheel passed through (not at left edge)";
+            return false;
+        }
+
+        if (event->state == KWin::PointerButtonState::Pressed) {
+            changeVolume(event->nativeButton == 4 ? +1 : -1);
+        }
+
+        // Consume only X11 wheel buttons at the left edge. Normal buttons
+        // never enter this branch and continue through KWin unchanged.
+        return true;
+    }
+
     bool pointerAxis(KWin::PointerAxisEvent *event) override
     {
         qInfo() << "KDEVolume: axis"
