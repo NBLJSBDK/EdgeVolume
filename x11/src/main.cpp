@@ -42,7 +42,22 @@ bool deviceHasWheel(int fd, bool *hiRes)
 
     QByteArray relativeBits((REL_MAX + 8) / 8, '\0');
     if (ioctl(fd, EVIOCGBIT(EV_REL, REL_MAX + 1), relativeBits.data()) < 0 ||
+        !hasBit(relativeBits, REL_X) ||
+        !hasBit(relativeBits, REL_Y) ||
         !hasBit(relativeBits, REL_WHEEL)) {
+        return false;
+    }
+
+    // A number of composite devices expose a wheel but are not actual
+    // pointing devices (keyboard knobs, consumer-control interfaces, and
+    // receiver-only interfaces).  Virtualizing those devices adds extra
+    // mouse paths and can cause visible cursor jitter.  Require at least one
+    // normal mouse button before grabbing the device.
+    QByteArray keyBits((KEY_MAX + 8) / 8, '\0');
+    if (ioctl(fd, EVIOCGBIT(EV_KEY, KEY_MAX + 1), keyBits.data()) < 0 ||
+        (!hasBit(keyBits, BTN_LEFT) &&
+         !hasBit(keyBits, BTN_RIGHT) &&
+         !hasBit(keyBits, BTN_MIDDLE))) {
         return false;
     }
 
