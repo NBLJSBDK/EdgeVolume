@@ -110,11 +110,44 @@ if command -v qdbus6 >/dev/null 2>&1; then
 fi
 
 mkdir -p "$HOME/.local/state"
-pkill -x edge-volume 2>/dev/null || true
+pkill -TERM -x edge-volume 2>/dev/null || true
+
+# D-Bus keeps the service name until the old process has actually exited.
+# Waiting here avoids starting a replacement into the old process's name.
+for _ in {1..30}; do
+    if ! pgrep -x edge-volume >/dev/null 2>&1; then
+        break
+    fi
+    sleep 0.1
+done
+if pgrep -x edge-volume >/dev/null 2>&1; then
+    echo "旧的 edge-volume 未正常退出，正在强制结束它。" >&2
+    pkill -KILL -x edge-volume 2>/dev/null || true
+    sleep 0.2
+fi
+
+# Be explicit about the session-bus handoff as well.  This is usually
+# instantaneous after the process exits, but can briefly lag behind it.
+if command -v qdbus6 >/dev/null 2>&1; then
+    for _ in {1..30}; do
+        if ! qdbus6 org.example.EdgeVolume /EdgeVolume >/dev/null 2>&1; then
+            break
+        fi
+        sleep 0.1
+    done
+fi
+
 nohup "$BIN_DIR/edge-volume" \
     >"$HOME/.local/state/edge-volume.log" 2>&1 &
+EDGE_VOLUME_PID=$!
 
 sleep 1
+
+if ! kill -0 "$EDGE_VOLUME_PID" 2>/dev/null; then
+    echo "edge-volume 启动失败，日志如下：" >&2
+    tail -n 20 "$HOME/.local/state/edge-volume.log" >&2 || true
+    exit 1
+fi
 
 echo
 echo "安装完成。"
