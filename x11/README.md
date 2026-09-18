@@ -63,11 +63,8 @@ KWin 光标桥接已连接
 ## 卸载
 
 ```bash
-pkill -x edge-volume 2>/dev/null || true
-rm -f "$HOME/.local/bin/edge-volume"
-rm -rf "$HOME/.local/share/kwin/scripts/edge-volume-cursor"
-rm -f "$HOME/.config/autostart/edge-volume.desktop"
-sudo rm -f /etc/udev/rules.d/99-edge-volume-mouse.rules
-sudo udevadm control --reload-rules
-sudo udevadm trigger --subsystem-match=input --action=change
+cd /home/hao123/tools/EdgeVolume/x11
+./uninstall.sh
 ```
+
+卸载脚本会停止进程、清理虚拟鼠标和输入设备权限，并检查是否仍有进程、脚本、udev 规则或虚拟鼠标残留。脚本会根据需要请求 sudo 权限。

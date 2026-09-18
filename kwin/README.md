@@ -35,6 +35,15 @@ mv "$HOME/.config/autostart/edge-volume.desktop" "$HOME/.config/edge-volume.desk
 
 注销并重新登录 Wayland 会话后，检查左边缘滚轮行为。EdgeVolume-KWin 作为 KWin 插件运行，不会出现单独的进程。
 
+## 卸载
+
+```bash
+cd /home/hao123/tools/EdgeVolume/kwin
+./uninstall.sh
+```
+
+脚本会禁用并删除已安装的 KWin 插件，检查配置和插件文件；如果当前 KWin 进程仍加载旧插件，会提示注销并重新登录。
+
 ## 设计
 
 - KWin 的 `InputEventFilter::pointerAxis()` 接收滚轮事件；返回 `true` 消费事件，返回 `false` 放行。

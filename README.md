@@ -35,6 +35,17 @@ kwriteconfig6 --file "$HOME/.config/kwinrc" \
 
 安装或更新后注销并重新登录 KDE，让 KWin 重新加载插件。
 
+## 卸载
+
+分别进入对应后端目录运行：
+
+```bash
+cd x11 && ./uninstall.sh
+cd ../kwin && ./uninstall.sh
+```
+
+两个脚本都会在卸载后检查进程、配置和安装文件是否残留。
+
 ## 设计
 
 - X11 后端独占带滚轮能力的 evdev 输入设备，并通过虚拟鼠标转发点击和移动。
