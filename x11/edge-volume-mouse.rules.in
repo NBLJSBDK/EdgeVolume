@@ -1,6 +1,7 @@
-# Give only the active edge-volume user access to physical mouse event nodes.
-# This intentionally does not grant access to keyboard event nodes.
-ACTION=="add|change", SUBSYSTEM=="input", KERNEL=="event*", ENV{ID_INPUT_MOUSE}=="1", OWNER="@EDGE_VOLUME_USER@", MODE="0600"
+# Give only the active edge-volume user access to relative input devices.
+# Some composite Logitech receivers on Debian do not expose ID_INPUT_MOUSE;
+# REL capability is the reliable indicator used by EdgeVolume itself.
+ACTION=="add|change", SUBSYSTEM=="input", KERNEL=="event*", ATTR{device/capabilities/rel}!="0", OWNER="@EDGE_VOLUME_USER@", MODE="0600"
 
 # EVIOCGRAB 会抓住物理鼠标，再由 EdgeVolume 创建虚拟鼠标转发非滚轮事件。
 KERNEL=="uinput", OWNER="@EDGE_VOLUME_USER@", MODE="0600"

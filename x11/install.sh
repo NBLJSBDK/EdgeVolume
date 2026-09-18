@@ -68,6 +68,25 @@ if command -v sudo >/dev/null 2>&1 && command -v udevadm >/dev/null 2>&1; then
     sudo udevadm trigger --subsystem-match=misc --sysname-match=uinput \
         --action=change 2>/dev/null || true
 
+    # Existing input nodes may not be recreated by udevadm trigger.  Apply an
+    # ACL immediately as well, otherwise the newly started daemon still sees
+    # the old root:input permissions until the next device reconnect.
+    if command -v setfacl >/dev/null 2>&1; then
+        for device in /dev/input/event*; do
+            [[ -e "$device" ]] || continue
+            sysname="${device##*/}"
+            rel_caps="/sys/class/input/$sysname/device/capabilities/rel"
+            if [[ -r "$rel_caps" ]] && [[ "$(<"$rel_caps")" != "0" ]]; then
+                sudo setfacl -m "u:${EDGE_VOLUME_USER}:rw" "$device"
+            fi
+        done
+        if [[ -e /dev/uinput ]]; then
+            sudo setfacl -m "u:${EDGE_VOLUME_USER}:rw" /dev/uinput
+        fi
+    else
+        echo "警告：找不到 setfacl，当前输入设备可能仍然没有权限。请安装 acl：sudo apt install acl" >&2
+    fi
+
     echo "已配置：$UDEV_RULE_PATH"
     echo "用户：$EDGE_VOLUME_USER"
 else

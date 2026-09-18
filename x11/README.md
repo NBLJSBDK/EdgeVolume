@@ -20,7 +20,7 @@ EdgeVolume 不创建透明窗口，也不占用屏幕边缘的输入区域，因
 
 ```bash
 sudo apt update
-sudo apt install build-essential cmake qt6-base-dev
+sudo apt install build-essential cmake qt6-base-dev acl
 ```
 
 在本项目目录运行：
