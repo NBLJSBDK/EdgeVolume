@@ -1,5 +1,7 @@
 # CMake build output
 /build/
+/x11/build/
+/kwin/build/
 CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake

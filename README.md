@@ -2,72 +2,45 @@
 
 KDE 下左边缘滚轮调节 KDE 音量工具。
 
-EdgeVolume 不创建透明窗口，也不占用屏幕边缘的输入区域，因此左侧 1px 的点击、右键、拖拽和截图不会被拦截。
+同一个仓库提供两个后端：
 
-## 工作方式
+| 会话 | 后端 | 目录 |
+|---|---|---|
+| X11 | EdgeVolume evdev 后端 | [`x11/`](x11/) |
+| Wayland | EdgeVolume-KWin 原生插件 | [`kwin/`](kwin/) |
 
-- `edge-volume` 独占带滚轮能力的 Linux evdev 输入设备，并创建一个同等能力的虚拟鼠标；
-- KWin Script 通过 KDE 的 `workspace.cursorPos` 同步当前光标位置；
-- 光标位于虚拟屏幕最左侧 1px 时，滚轮事件被消费、不再传给下层，并调用 KDE 的音量快捷键；
-- 物理鼠标的点击、移动、拖拽以及非边缘滚轮事件，都会通过虚拟鼠标转发；
-- 音量 OSD、反馈音、步进和最大音量设置继续由 KDE 管理。
+两个后端都只在鼠标位于虚拟屏幕最左侧 1px 时处理滚轮。普通点击、右键、拖拽和截图不会被透明窗口拦截。
 
-支持 KDE Plasma 的 X11 和 Wayland 会话。
+## X11
 
-## 安装
-
-先安装依赖：
+使用 evdev 后端和虚拟鼠标转发物理鼠标事件：
 
 ```bash
-sudo apt update
-sudo apt install build-essential cmake qt6-base-dev
-```
-
-在本项目目录运行：
-
-```bash
+cd x11
 ./install.sh
 ```
 
-也可以运行：
+## Wayland
+
+使用 KWin 输入过滤插件：
 
 ```bash
-sudo ./install.sh
+cd kwin
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+cmake --build build --parallel
+sudo cmake --install build
+kwriteconfig6 --file "$HOME/.config/kwinrc" \
+    --group Plugins --key kdevolumeEnabled --type bool true
 ```
 
-安装脚本会自动切回原来的 KDE 用户，把程序安装到用户目录；sudo 仅用于写入鼠标输入设备的 udev 权限规则、刷新规则和配置。不会把程序安装到 `/root`，也不会让后台程序以 root 运行。
+安装或更新后注销并重新登录 KDE，让 KWin 重新加载插件。
 
-## 测试
+## 设计
 
-```bash
-tail -n 50 "$HOME/.local/state/edge-volume.log"
-```
+- X11 后端独占带滚轮能力的 evdev 输入设备，并通过虚拟鼠标转发点击和移动。
+- Wayland 后端直接运行在 KWin 输入管线中，不创建透明窗口、不读取 `/dev/input/event*`。
+- 音量 OSD、提示音、步进和最大音量设置继续由 KDE 管理。
 
-正常应看到：
+## 项目描述
 
-```text
-KWin 光标桥接已连接
-拦截滚轮设备：/dev/input/event...，点击/移动转发到虚拟鼠标
-```
-
-把鼠标移到屏幕最左侧，滚动滚轮测试音量；再测试最左侧像素的点击是否正常。
-
-## 安装位置
-
-- 程序：`~/.local/bin/edge-volume`
-- KWin Script：`~/.local/share/kwin/scripts/edge-volume-cursor`
-- 自启动：`~/.config/autostart/edge-volume.desktop`
-- udev 规则：`/etc/udev/rules.d/99-edge-volume-mouse.rules`
-- 日志：`~/.local/state/edge-volume.log`
-
-## 卸载
-
-```bash
-pkill -x edge-volume 2>/dev/null || true
-rm -f "$HOME/.local/bin/edge-volume"
-rm -rf "$HOME/.local/share/kwin/scripts/edge-volume-cursor"
-rm -f "$HOME/.config/autostart/edge-volume.desktop"
-sudo rm -f /etc/udev/rules.d/99-edge-volume-mouse.rules
-sudo udevadm control --reload-rules
-sudo udevadm trigger --subsystem-match=input --action=change
-```
+KDE 下左边缘滚轮调节 KDE 音量，分别支持 X11 和 Wayland。
